@@ -40,6 +40,25 @@ def find_report_file(path_to_find):
     return ""
 
 
+def check_extension_and_format(base_path, output_extension):
+    success = False
+    if base_path.endswith((".yaml", ".yml")):
+        if output_extension == ".yaml":
+            success = False
+        else:
+            p = re.compile(r"oss-pkg-info[\s\S]*.ya?ml", re.I)
+            if p.search(base_path):
+                success = True
+    elif base_path.endswith(".xlsx"):
+        if output_extension == ".xlsx":
+            success = False
+        else:
+            p = re.compile(r"[\s\S]*OSS[\s\S]*-Report[\s\S]*.xlsx", re.I)
+            if p.search(base_path):
+                success = True
+    return success
+
+
 def convert_report(base_path, output_name, format, need_log_file=True, sheet_names=""):
     oss_pkg_files = ["oss-pkg-info.yml", "oss-pkg-info.yaml"]
     file_option_on = False
@@ -73,33 +92,29 @@ def convert_report(base_path, output_name, format, need_log_file=True, sheet_nam
         logger.error(f"Format error - {msg}")
         sys.exit(1)
 
-    if os.path.isdir(base_path):
-        if output_extension == ".yaml":
-            logger.error("Format error - can make only .xlsx file")
+    if base_path == "":
+        logger.error("Please use -p <path> : ex)fosslight_prechecker convert -p tests/oss-pkg-info.yaml")
+        sys.exit(1)
+    else:
+        if not check_extension_and_format(base_path, output_extension):
+            logger.error("Not support the file name and extension - only support for 'FOSSLight-Report*.xlsx' or 'oss-pkg-info*.yaml' file")
             sys.exit(1)
+
+    if os.path.isdir(base_path):
         convert_yml_mode = True
     else:
         if base_path != "":
             if base_path.endswith(".xlsx"):
-                if output_extension == '.xlsx':
-                    logger.error("Format error - can make only .yaml file")
-                    sys.exit(1)
                 p = re.compile(r"[\s\S]*OSS[\s\S]*-Report[\s\S]*.xlsx", re.I)
                 if p.search(base_path):
                     convert_excel_mode = True
                     report_to_read = base_path
             elif base_path.endswith((".yaml", ".yml")):
-                if output_extension == '.yaml':
-                    logger.error("Format error - can make only .xlsx file")
-                    sys.exit(1)
                 p = re.compile(r"oss-pkg-info[\s\S]*.ya?ml", re.I)
                 if p.search(base_path):
                     oss_pkg_files = base_path.split(',')
                     convert_yml_mode = True
                     file_option_on = True
-            else:
-                logger.error("Not support file name or extension - only support for FOSSLight-Report*.xlsx or oss-pkg-info*.yaml file")
-                sys.exit(1)
 
     if not convert_yml_mode and not convert_excel_mode:
         if is_window:
@@ -109,7 +124,9 @@ def convert_report(base_path, output_name, format, need_log_file=True, sheet_nam
             if report_to_read != "":
                 convert_excel_mode = True
         else:
-            print_help_msg()
+            print_help_msg(False)
+            logger.error("Please read help msg and run it again.")
+            sys.exit(1)
 
     if convert_yml_mode:
         convert_yml_to_excel(oss_pkg_files, output_report, file_option_on, base_path, is_window)
