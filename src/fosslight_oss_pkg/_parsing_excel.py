@@ -59,7 +59,7 @@ def convert_excel_to_yaml(oss_report_to_read, output_file, sheet_names=""):
         try:
             items = read_oss_report(oss_report_to_read, sheet_names)
             for item in items:
-                yaml_dict = create_yaml_with_ossitem(item, yaml_dict)
+                create_yaml_with_ossitem(item, yaml_dict)
             if yaml_dict:
                 output_file = output_file if output_file.endswith(_file_extension) else output_file + _file_extension
                 success = write_yaml_file(output_file, yaml_dict)
